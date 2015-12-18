@@ -2,7 +2,11 @@
 //module name:tx_data_test.v
 //Author:IVAN
 //Date:2011/1/6
-//Function Description : from ROM continue read data and send them to mcasp
+
+//Revised by:George Yu
+//Date:2015/12/12
+
+//Function Description : from ROM continue read data and send them to mcasp 
 //*******************************************************************************
 module tx_data_test(
 				input clkr,   //10m clk
@@ -10,14 +14,14 @@ module tx_data_test(
 				
 				input int,                //interrupt signal, used for ensuring the actual data transfer position
 				input int_begin,
-				input tx_ready,			  //data send32bit
+				input tx_ready,			  //data send enable signal,generate once every 32bit data
 				output reg rd_en,         //read enable signal of sending RAM
 				// output [31:0] tx_data, //32bit data to send
 				output reg tx_data_en,
 				output reg [7:0] rom_address,
 				output reg flag_begin,
 				output reg tx_data_switch,
-				output reg [13:0] time_count,
+				output reg [13:0] time_count, //this counter is used for generating the sending interrupt of every 864 data transfer to DSP
 				output reg int_tx_all
 					);
 
@@ -75,9 +79,9 @@ always@(posedge clkr or posedge rst)
 			end
 	end	
 
-reg[2:0] state;   	   //add the state��״̬������ʽ���ͽ��մ洢������֮ǰ�ȷ���һ��32bit��TOAֵ	
+reg[2:0] state;   	   //add more states,send a 32bit value of TOA before sending data from the receiving memory officially	
 reg[7:0] add_cnt;
-//reg[7:0] rom_address;//256�����ݣ�ROM��ַ					
+//reg[7:0] rom_address;//256 datas, ROM address					
 always@(posedge clkr or posedge rst)
 	begin
 		if(rst)
@@ -125,7 +129,7 @@ always@(posedge clkr or posedge rst)
 				//			tx_data_en<=1'b1;
 				//		end
 					
-					//the swtich of sending data,using this switch control to decide whether to 
+					//the switch of sending data,using this switch control to decide whether to send value of TOA or to send data from the receiving memory.
 					if(tx_ready)
 						begin
 							tx_data_switch <= 1'b0;
@@ -139,7 +143,7 @@ always@(posedge clkr or posedge rst)
 				//	tx_data_en <= 1'b1;
 			  		if(tx_ready)
 						begin
-							if(add_cnt == 8'd22)   //to send 219*32bit data
+							if(add_cnt == 8'd22)   //to send 216*32bit data
 								begin
 									rom_address <= rom_address;
 									add_cnt <= 8'd0;
@@ -219,7 +223,7 @@ always@(posedge clkr or posedge rst)
 			end
 	end
 	
-//����ʹ�õ�ROM	
+//ROM for testing 	
 // rom rom_inst(
 			// .address(rom_address),
 			// .clock(clkr),

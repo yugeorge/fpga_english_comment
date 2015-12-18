@@ -18,43 +18,43 @@
 
 module mcasp_master(
 					input clkr,
-					input clkx,                  //MCASP��������ʱ��
+					input clkx,                  //McBSP receiving data clock
 					
-					input rst,                   //�첽��λ�ź�
+					input rst,                   //asynchronus reset signal
 					
-					output reg [31:0] rx_data_out,  //���յ�������  
-					input [31:0] tx_data_in,     //����������
+					output reg [31:0] rx_data_out,  //the receiving data
+					input [31:0] tx_data_in,     // data to be send
 					
-					input  dr,                   //MCASP�����ź�
-					output reg dx,               //MCASP�����ź�
+					input  dr,                   //McBSP input signal
+					output reg dx,               //McBSP output signal
 
-					output reg fsx,              //MCASP����֡ͬ���ź�
-					output reg fsr,				 //MCASP����֡ͬ���ź�(DSP)
+					output reg fsx,              //McBSP send frame synchronisation 
+					output reg fsr,				 //McBSP receive frame synchronisation (DSP)
 					
-					output reg rx_ready,        //�������������źţ�ÿ32bit����һ��
-					output reg tx_ready,			//�������������źţ�ÿ32bit����һ��
+					output reg rx_ready,        //Signal indicates receive data transfer complete, generate once every 32bit.
+					output reg tx_ready,		//Signal indicated send data transfer complete, generate once every 32bit.
 					
-					input transform_en,         //���ݴ���ʹ���ź�
+					input transform_en,         //Data transfer enable signal 
 					
 					input tx_data_en
 );
 
 //----------------------------------------------------------
-//                    �������ݲ���
+//                    receive data part
 //----------------------------------------------------------
 
-//��������״̬
+//receive data status
 parameter rx_idle   = 2'b00;
 parameter rx_data   = 2'b01;
 parameter rx_end    = 2'b10;
 
-reg [7:0] rx_cnt;   //���ݱ��ؼ�����
-reg [1:0] rx_state; //����״̬
-reg [33:0] rx_data_reg;//���ݽ��ռĴ�����34bit������
+reg [7:0] rx_cnt;   //data bit counter
+reg [1:0] rx_state; //receiving state
+reg [33:0] rx_data_reg;//data receiving register //34bit data
 reg dx1;
 
 
-//����ת��״̬��
+//the receiving state machine transfer
 always@(negedge clkx or posedge rst)
 	begin
 		if(rst)
@@ -112,14 +112,14 @@ always@(negedge clkx or posedge rst)
 			end
 	end
 
-//�������ݲ���
+//the receiving data part
 
 
 always @(posedge clkx or posedge rst)
 begin
     if(rst)
         begin 
-        rx_data_reg <= 34'd0; //ʹ��34bit�ļĴ�������������Ч�����ǵ�32bit����һ����DSP�ſ�ʼ��������
+        rx_data_reg <= 34'd0; //to use 34bit register, the real effective data length is the low 32bit, after the first edge DSP starts to send data
         rx_data_out <= 32'd0;
         end
     else
@@ -144,20 +144,20 @@ end
 
 
 //----------------------------------------------------------
-//                    �������ݲ���
+//                    Part of sending data
 //----------------------------------------------------------
 
-//��������״̬
+//state of sending data
 parameter tx_idle   = 2'b00;
 parameter tx_data   = 2'b01;
 parameter tx_end    = 2'b11;
 parameter tx_delay  = 2'b10;
 
-reg [7:0] tx_cnt;   //�������ݱ��ؼ�����
-reg [1:0] tx_state; //����״̬
-reg [31:0] tx_data_reg;//�������ݴ洢�Ĵ���
+reg [7:0] tx_cnt;   //bit counter of sending data
+reg [1:0] tx_state; //state of send
+reg [31:0] tx_data_reg;//send data register
 
-//����ת��״̬��
+//state machine transfer of the send state
 always@(posedge clkr or posedge rst)
 	begin
 		if(rst)
@@ -193,7 +193,7 @@ always@(posedge clkr or posedge rst)
 						begin
 						tx_cnt <= 8'd31;
 						tx_state <= tx_end;
-						tx_ready <= 1'b1; //��������32bit���ݣ���߱�־λ
+						tx_ready <= 1'b1; //when 32bit data completed sending , push tx_ready to high.
 						end
 					else
 					   begin
@@ -223,13 +223,13 @@ always@(posedge clkr or posedge rst)
 	end
 	
 
-//�������ݲ���
+//Sending data part
 always@(negedge clkr or posedge rst)
 	begin
 		if(rst)
 			begin
 				tx_data_reg <=32'd0;
-				dx1 <= 0;
+				dx1 <= 0;   //used for delay one clock cycle to meet the McBSP timing diagram
 				dx <= 0;
 			end
 		else
