@@ -1,35 +1,31 @@
 //********************************************************************************************
-//ģ�����ƣ�int_dsp_Linklayer_tx.v
-//���ߣ�IVAN
-//ʱ��:2010/3/3
-//������ÿ��7.8125ms����һ���жϣ��͵�ƽ��Ч���͵�ƽ����ʱ������60us���ݶ�ÿ��ʱ϶����һ���жϣ�
-//���ж���FPGA��DSP�ķ����ж�
-//�q�������r 
-//{/ o  o /}  
-// ( (oo) )     ���жϲ��������Ǻ����Ӣ���·��DSP����ͨ�ŵ�ģ��
-// �� ����
+//module name:int_dsp_Linklayer_tx.v
+//Author :IVAN
+//Date :2010/3/3
+//Description:generate an interrupt every 7.8125ms valid for low level,last time 
+//this interrupt is sending interrupt from FPGA to DSP.
 //*********************************************************************************************
 
 module int_dsp_Linklayer_tx(
 
-	input clk,                      //������ϵͳʱ��Ϊ160MHZ
+	input clk,                      //input clk is 200MHz
 	input clkr,
 	input rst,
-	input tx_flag,                    //�жϱ�־λ
+	input tx_flag,                    //interrupt flag 
 	input tx_begin,                                                                                                                                                   
-	output reg int_tx,                 //ÿ7.8125����һ���жϣ������������
+	output reg int_tx,                 //generate an interrupt every 7.8125ms ,used for sending data
 	output int_begin
 
 );
 //====================================================================================================
-//=========================================����int_tx�ж�===============================================
+//=========================================generate int_tx interrupt===============================================
 reg [15:0] cnt;
 always@(posedge clk or posedge rst)
 	begin
 		if(rst)
 			begin
 				int_tx <= 1'b0;
-				cnt <= 16'd200000;  //��ʼʱ�̲�����FPGA�����ж�
+				cnt <= 16'd200000;  //can't make FPGA generate interrupt at initial stage
 			end
 		else
 			begin
